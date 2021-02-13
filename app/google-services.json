@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "915990394653",
+    "project_id": "qaapp-77eb8",
+    "storage_bucket": "qaapp-77eb8.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:915990394653:android:2a0e084f02883f6aa113f4",
+        "android_client_info": {
+          "package_name": "jp.techacademy.ryoichi.satoyama.qa_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "915990394653-q1e6rsrovi0jgo3do997lljsc71oqu68.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArmqjpRG9StmkWacJQ9sU7S2jjUCXI_nI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "915990394653-q1e6rsrovi0jgo3do997lljsc71oqu68.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
