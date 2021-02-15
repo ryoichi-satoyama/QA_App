@@ -12,6 +12,7 @@ import kotlinx.android.synthetic.main.list_question_detail.view.*
 
 class QuestionDetailListAdapter(context: Context, private val mQuestion: Question): BaseAdapter() {
     companion object {
+        //どのレイアウトを使って表示させるかを判断するためのタイプを表す定数
         private val TYPE_QUESTION = 0
         private val TYPE_ANSWER = 1
     }
@@ -22,6 +23,7 @@ class QuestionDetailListAdapter(context: Context, private val mQuestion: Questio
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
         var view = convertView
+        //ビューのタイプによってリストのレイアウトを決定する
         if(getItemViewType(position) == TYPE_QUESTION) {
             if(view == null) {
                 view = mLayoutInflater!!.inflate(R.layout.list_question_detail, parent, false)
@@ -64,7 +66,7 @@ class QuestionDetailListAdapter(context: Context, private val mQuestion: Questio
         return 2
     }
 
-
+    //引数で渡ってきたポジションがどのタイプかを返す
     override fun getItemViewType(position: Int): Int {
         return if(position == 0) {
             TYPE_QUESTION

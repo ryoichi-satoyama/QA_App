@@ -20,9 +20,11 @@ class AnswerSendActivity : AppCompatActivity(), View.OnClickListener, DatabaseRe
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_answer_send)
 
+        // 渡ってきたQuestionのオブジェクトを保持する
         val extras = intent.extras
         mQuestion = extras!!.get("question") as Question
 
+        // UIの準備
         sendButton.setOnClickListener(this)
     }
 
@@ -37,6 +39,7 @@ class AnswerSendActivity : AppCompatActivity(), View.OnClickListener, DatabaseRe
     }
 
     override fun onClick(v: View) {
+        // キーボードが出てたら閉じる
         val im = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         im.hideSoftInputFromWindow(v.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
 
@@ -46,14 +49,19 @@ class AnswerSendActivity : AppCompatActivity(), View.OnClickListener, DatabaseRe
 
         val data = HashMap<String, String>()
 
+        // UID
         data["uid"] = FirebaseAuth.getInstance().currentUser!!.uid
 
+        // 表示名
+        // Preferenceから名前を取る
         val sp = PreferenceManager.getDefaultSharedPreferences(this)
         val name = sp.getString(NameKEY, "")
         data["name"] = name!!
 
+        // 回答を取得する
         val answer = answerEditText.text.toString()
         if(answer.isEmpty()) {
+            // 回答が入力されていない時はエラーを表示するだけ
             Snackbar.make(v, getString(R.string.answer_error_message), Snackbar.LENGTH_LONG).show()
             return
         }

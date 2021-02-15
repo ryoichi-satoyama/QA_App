@@ -47,6 +47,7 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_question_send)
 
+        // 渡ってきたジャンルの番号を保持する
         val extras = intent.extras
         mGenre = extras!!.getInt("genre")
 
@@ -67,8 +68,10 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
                 return
             }
 
+            // 画像を取得
             val uri = if (data == null || data.data == null) mPictureUri else data.data
 
+            // URIからBitmapを取得する
             val image: Bitmap
             try {
 //                val contentResolver = contentResolver
@@ -79,6 +82,7 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
                 return
             }
 
+            // 取得したBimapの長辺を500ピクセルにリサイズする
             val imageWidth = image.width
             val imageHeight = image.height
             val scale = Math.min(500.toFloat() / imageWidth, 500.toFloat() / imageHeight)
@@ -89,19 +93,22 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
             val resizeImage =
                 Bitmap.createBitmap(image, 0, 0, imageWidth, imageHeight, matrix, true)
 
+            // BitmapをImageViewに設定する
             imageView.setImageBitmap(resizeImage)
 
             mPictureUri = null
-
         }
     }
 
     override fun onClick(v: View?) {
+        // パーミッションの許可状態を確認する
         if (v === imageView) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                    // 許可されている
                     showChooser()
                 } else {
+                    // 許可されていないので許可ダイアログを表示する
                     requestPermissions(
                         arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
                         PERMISSIONS_REQUEST_CODE
@@ -113,6 +120,7 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
                 showChooser()
             }
         } else if (v === sendButton) {
+            // キーボードが出てたら閉じる
             val im = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
             im.hideSoftInputFromWindow(v.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
 
@@ -121,20 +129,25 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
 
             val data = HashMap<String, String>()
 
+            // UID
             data["uid"] = FirebaseAuth.getInstance().currentUser!!.uid
 
+            // タイトルと本文を取得する
             val title = titleText.text.toString()
             val body = bodyText.text.toString()
 
             if (title.isEmpty()) {
+                // タイトルが入力されていない時はエラーを表示するだけ
                 Snackbar.make(v, getString(R.string.input_title), Snackbar.LENGTH_LONG).show()
                 return
             }
             if (body.isEmpty()) {
+                // 質問が入力されていない時はエラーを表示するだけ
                 Snackbar.make(v, getString(R.string.question_message), Snackbar.LENGTH_LONG).show()
                 return
             }
 
+            // Preferenceから名前を取る
             val sp = PreferenceManager.getDefaultSharedPreferences(this)
             val name = sp.getString(NameKEY, "")
 
@@ -142,8 +155,12 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
             data["body"] = body
             data["name"] = name!!
 
+            // 添付画像を取得する
+            //? → 安全なキャスト演算子
+            //キャストに失敗したら null を返します。
             val drawable = imageView.drawable as? BitmapDrawable
 
+            // 添付画像が設定されていれば画像を取り出してBASE64エンコードする
             if (drawable != null) {
                 val bitmap = drawable.bitmap
                 val baos = ByteArrayOutputStream()
@@ -153,6 +170,7 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
                 data["image"] = bitmapString
             }
 
+            //画像を保存する可能性があり、保存するのに時間を要することが予想されるのでCompletionListenerクラスで完了を受け取るようにします。
             genreRef.push().setValue(data, this)
             progressBar.visibility = View.VISIBLE
         }
@@ -166,6 +184,7 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
         when(requestCode) {
             PERMISSIONS_REQUEST_CODE -> {
                 if(grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // ユーザーが許可したとき
                     showChooser()
                 }
                 return
@@ -174,29 +193,36 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
     }
 
     private fun showChooser() {
+        // ギャラリーから選択するIntent
         val galleryIntent = Intent(Intent.ACTION_GET_CONTENT)
         galleryIntent.type = "image/*"
         galleryIntent.addCategory(Intent.CATEGORY_OPENABLE)
 
+        // カメラで撮影するIntent
         val filename = System.currentTimeMillis().toString() + ".jpg"
         val values = ContentValues()
         values.put(MediaStore.Images.Media.TITLE, filename)
         values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpg")
         mPictureUri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+
         val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
         cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, mPictureUri)
 
+        // ギャラリー選択のIntentを与えてcreateChooserメソッドを呼ぶ
         val chooserIntent = Intent.createChooser(galleryIntent, getString(R.string.get_image))
 
+        // EXTRA_INITIAL_INTENTSにカメラ撮影のIntentを追加
         chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(cameraIntent))
 
         startActivityForResult(chooserIntent, CHOOSER_REQUEST_CODE)
     }
 
+    //Firebaseへの保存完了イベントを受け取ると実行される
     override fun onComplete(error: DatabaseError?, ref: DatabaseReference) {
         progressBar.visibility = View.GONE
 
         if(error == null) {
+            //保存成功時
             finish()
         } else {
             Snackbar.make(findViewById(android.R.id.content), getString(R.string.question_send_error_message), Snackbar.LENGTH_LONG).show()

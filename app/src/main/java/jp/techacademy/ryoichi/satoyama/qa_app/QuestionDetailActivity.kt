@@ -28,6 +28,7 @@ class QuestionDetailActivity : AppCompatActivity() {
             val answerUid = snapshot.key ?: ""
 
             for(answer in mQuestion.answers) {
+                // 同じAnswerUidのものが存在しているときは何もしない
                 if(answerUid == answer.answerUid) {
                     return
                 }
@@ -50,22 +51,27 @@ class QuestionDetailActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_question_detail)
 
+        // 渡ってきたQuestionのオブジェクトを保持する
         val extras = intent.extras
         mQuestion = extras!!.get("question") as Question
 
         title = mQuestion.title
 
+        // ListViewの準備
         mAdapter = QuestionDetailListAdapter(this, mQuestion)
         listView.adapter = mAdapter
         mAdapter.notifyDataSetChanged()
 
         fab.setOnClickListener{
+            // ログイン済みのユーザーを取得する
             val user = FirebaseAuth.getInstance().currentUser
+
             if(user == null) {
+                // ログインしていなければログイン画面に遷移させる
                 val intent = Intent(applicationContext, LoginActivity::class.java)
                 startActivity(intent)
             } else {
-                //todo Questionを渡して解答作成画面を起動
+                //Questionを渡して解答作成画面を起動
                 val intent = Intent(applicationContext, AnswerSendActivity::class.java)
                 intent.putExtra("question", mQuestion)
                 startActivity(intent)
