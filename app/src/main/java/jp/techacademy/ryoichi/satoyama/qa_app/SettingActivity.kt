@@ -60,6 +60,10 @@ class SettingActivity : AppCompatActivity() {
         logoutButton.setOnClickListener { v ->
             FirebaseAuth.getInstance().signOut()
             nameText.setText("")
+            val sp = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+            val editor = sp.edit()
+            editor.remove(NameKEY)
+            editor.commit()
             Snackbar.make(v, getString(R.string.logout_complete_message), Snackbar.LENGTH_LONG).show()
         }
     }

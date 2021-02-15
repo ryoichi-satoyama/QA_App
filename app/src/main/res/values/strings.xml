@@ -58,4 +58,8 @@
     <string name="send_answer_failure">投稿に失敗しました</string>
     <string name="answer_error_message">回答を入力してください</string>
 
+    <!--課題　お気に入り-->
+    <string name="menu_favorite_label">お気に入り</string>
+    <string name="favorite_remove_error_messege">お気に入りの削除に失敗しました</string>
+
 </resources>

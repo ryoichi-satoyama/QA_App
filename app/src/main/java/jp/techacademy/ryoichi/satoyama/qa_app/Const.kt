@@ -7,4 +7,6 @@ const val ContentsPATH = "contents"
 
 const val AnswersPATH = "answers"
 
+const val FavoritesPATH = "favorites"
+
 const val NameKEY = "name"

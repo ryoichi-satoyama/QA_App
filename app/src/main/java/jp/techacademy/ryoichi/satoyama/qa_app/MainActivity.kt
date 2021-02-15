@@ -1,6 +1,7 @@
 package jp.techacademy.ryoichi.satoyama.qa_app
 
 import android.content.Intent
+import android.opengl.Visibility
 import android.os.Bundle
 import android.util.Base64
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -8,6 +9,7 @@ import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
@@ -20,7 +22,9 @@ import kotlinx.android.synthetic.main.content_main.*
 import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
-    private var mGenre = 0;
+    //    private var mGenre = 0;
+    //お気に入りを0に設定
+    private var mGenre = -1;
 
     private lateinit var mDatabaseReference: DatabaseReference
     private lateinit var mQuestionArrayList: ArrayList<Question>
@@ -29,6 +33,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private val mEventListener = object : ChildEventListener {
         override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+            //リスナーを設定したタイミングで、リファレンスにデータがあれば、onChildAddedのメソッドがデータ数分呼ばれる
+            //データが0件場合は、onChildAddedは呼ばれない
             val map = snapshot.value as Map<String, String>
             val title = map["title"] ?: ""
             val body = map["body"] ?: ""
@@ -53,9 +59,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     answerArrayList.add(answer)
                 }
             }
-
             val question =
                 Question(title, body, name, uid, snapshot.key ?: "", mGenre, bytes, answerArrayList)
+
             mQuestionArrayList.add(question)
             mAdapter.notifyDataSetChanged()
         }
@@ -87,13 +93,15 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
 
         override fun onCancelled(error: DatabaseError) {
-
+            //失敗したら
         }
 
         override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
+            //データを移動したとき
         }
 
         override fun onChildRemoved(snapshot: DataSnapshot) {
+            //データを削除したとき
         }
     }
 
@@ -108,7 +116,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         // fabにClickリスナーを登録
         fab.setOnClickListener { view ->
             // ジャンルを選択していない場合（mGenre == 0）はエラーを表示するだけ
-            if (mGenre == 0) {
+//            if (mGenre == 0) {
+            //お気に入りを0に設定
+            if (mGenre == -1) {
                 Snackbar.make(
                     view,
                     getString(R.string.question_no_select_genre),
@@ -159,6 +169,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             intent.putExtra("question", mQuestionArrayList[position])
             startActivity(intent)
         }
+
+
     }
 
 
@@ -167,6 +179,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         menuInflater.inflate(R.menu.menu_main, menu)
         return true
     }
+
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         val id = item.itemId
@@ -195,6 +208,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         } else if (id == R.id.nav_compter) {
             toolbar.title = getString(R.string.menu_compter_label)
             mGenre = 4
+        } else if (id == R.id.nav_favorite) {
+//            toolbar.title = getString(R.string.menu_favorite_label)
+//            mGenre = 0
+            val intent = Intent(this, FavoriteQuestionActivity::class.java)
+            startActivity(intent)
         }
 
         drawer_layout.closeDrawer(GravityCompat.START)
@@ -208,6 +226,16 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         if (mGenreRef != null) {
             mGenreRef!!.removeEventListener(mEventListener)
         }
+
+//        if(mGenre == 0) {
+//            //お気に入りの質問リストを取得
+//        } else {
+//            mGenreRef = mDatabaseReference.child(ContentsPATH).child(mGenre.toString())
+//
+//            //リスナーを設定したタイミングで、リファレンスにデータがあれば、onChildAddedのメソッドがデータ数分呼ばれる
+//            //データが0件場合は、onChildAddedは呼ばれない
+//            mGenreRef!!.addChildEventListener(mEventListener)
+//        }
         mGenreRef = mDatabaseReference.child(ContentsPATH).child(mGenre.toString())
         mGenreRef!!.addChildEventListener(mEventListener)
         return true
@@ -216,8 +244,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onResume() {
         super.onResume()
 
-        if (mGenre == 0) {
+//        if (mGenre == 0) {
+        if (mGenre == -1) {
             onNavigationItemSelected(nav_view.menu.getItem(0))
         }
+
+        val user = FirebaseAuth.getInstance().currentUser
+        nav_view.menu.findItem(R.id.nav_favorite).isVisible = user != null
     }
 }
