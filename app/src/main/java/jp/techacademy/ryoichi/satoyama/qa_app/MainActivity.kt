@@ -13,19 +13,23 @@ import androidx.core.view.GravityCompat
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.app_bar_main.*
 import kotlinx.android.synthetic.main.content_main.*
 import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
-    private var mGenre = 0;
-    private var hoge = 0;
+    private var mGenre = 0
 
     private lateinit var mDatabaseReference: DatabaseReference
     private lateinit var mQuestionArrayList: ArrayList<Question>
     private lateinit var mAdapter: QuestionsListAdapter
     private var mGenreRef: DatabaseReference? = null
+
+    //FireStore
+    private var snapshotListener: ListenerRegistration? = null
 
     private val mEventListener = object : ChildEventListener {
         override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
@@ -182,11 +186,41 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         mAdapter.setQuestionArrayList(mQuestionArrayList)
         listView.adapter = mAdapter
 
-        if(mGenreRef != null) {
-            mGenreRef!!.removeEventListener(mEventListener)
-        }
-        mGenreRef = mDatabaseReference.child(ContentsPATH).child(mGenre.toString())
-        mGenreRef!!.addChildEventListener(mEventListener)
+        //Firebase
+//        if(mGenreRef != null) {
+//            mGenreRef!!.removeEventListener(mEventListener)
+//        }
+//        mGenreRef = mDatabaseReference.child(ContentsPATH).child(mGenre.toString())
+//        mGenreRef!!.addChildEventListener(mEventListener)
+
+        //FireStore
+        snapshotListener?.remove()
+
+        snapshotListener = FirebaseFirestore.getInstance()
+            .collection(ContentsPATH)
+            .whereEqualTo("genre", mGenre)
+            .addSnapshotListener{ querySnapshot, firebaseFirestoreException ->
+                if(firebaseFirestoreException != null) {
+                    return@addSnapshotListener
+                }
+                var questions = listOf<Question>()
+                val results = querySnapshot?.toObjects(FireStoreQuestion::class.java)
+                results?.also {
+                    questions = it.map { fireStoreQuestion ->
+                        val bytes =
+                            if(fireStoreQuestion.iamge.isNotEmpty()) {
+                                Base64.decode(fireStoreQuestion.iamge, Base64.DEFAULT)
+                            } else {
+                                byteArrayOf()
+                            }
+                        Question(fireStoreQuestion.title, fireStoreQuestion.body, fireStoreQuestion.name, fireStoreQuestion.uid,
+                        fireStoreQuestion.id, fireStoreQuestion.genre, bytes, fireStoreQuestion.answers)
+                    }
+                }
+                mQuestionArrayList.clear()
+                mQuestionArrayList.addAll(questions)
+                mAdapter.notifyDataSetChanged()
+            }
         return true
     }
 

@@ -25,6 +25,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.android.synthetic.main.activity_question_send.*
 import java.io.ByteArrayInputStream
@@ -138,6 +139,16 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
             val sp = PreferenceManager.getDefaultSharedPreferences(this)
             val name = sp.getString(NameKEY, "")
 
+            //FireStore
+            var fireStoreQuestion = FireStoreQuestion()
+
+            fireStoreQuestion.uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+            fireStoreQuestion.title = title
+            fireStoreQuestion.body = body
+            fireStoreQuestion.name = name!!
+            fireStoreQuestion.genre = mGenre
+
+
             data["title"] = title
             data["body"] = body
             data["name"] = name!!
@@ -153,8 +164,22 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
                 data["image"] = bitmapString
             }
 
-            genreRef.push().setValue(data, this)
+//            genreRef.push().setValue(data, this)
             progressBar.visibility = View.VISIBLE
+
+            FirebaseFirestore.getInstance()
+                .collection(ContentsPATH)
+                .document(fireStoreQuestion.id)
+                .set(fireStoreQuestion)
+                .addOnSuccessListener {
+                    progressBar.visibility = View.GONE
+                    finish()
+                }
+                .addOnFailureListener {
+                    it.printStackTrace()
+                    progressBar.visibility =  View.GONE
+                    Snackbar.make(findViewById(android.R.id.content), getString(R.string.question_send_error_message), Snackbar.LENGTH_LONG).show()
+                }
         }
     }
 
