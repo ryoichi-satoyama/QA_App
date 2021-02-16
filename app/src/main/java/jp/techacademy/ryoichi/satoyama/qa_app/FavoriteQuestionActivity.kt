@@ -12,34 +12,39 @@ import kotlinx.android.synthetic.main.content_main.*
 
 class FavoriteQuestionActivity : AppCompatActivity() {
     private lateinit var mAdapter: QuestionsListAdapter
-    private lateinit var mQuestionArrayList: ArrayList<Question>
+//    private lateinit var mQuestionArrayList: ArrayList<Question>
+    private var mQuestionArrayList = ArrayList<Question>()
     private var mGenre = -1
     private var questionRef: DatabaseReference? = null
     private var favoriteRef: DatabaseReference? = null
 
+    //ユーザごとのお気に入り質問情報を取得する
     private val mFavoriteEventListener = object : ValueEventListener {
         override fun onDataChange(snapshot: DataSnapshot) {
+            //onDataChangeはリファレンス配下のデータを丸ごと取得する
             Log.d("QALOG", "FavoriteListener START")
 
+            //取得したデータ群をイテレートする
             for (ss in snapshot.children) {
+                //お気に入り登録されている質問のIDとジャンルを取得する
                 val questionId = ss.key.toString()
                 val genre = ss.child("genre").value.toString()
-//                val questionRef =
-////                    FirebaseDatabase.getInstance().reference.child(ContentsPATH).child(genre)
-////                        .child(questionId)
-//                if(questionRef != null) {
-//                    questionRef!!.removeEventListener(mQuestionEventListener)
-//                }
+
+                //お気に入り登録されている質問を取得する
                 questionRef = FirebaseDatabase.getInstance().reference.child(ContentsPATH).child(genre).child(questionId)
                 questionRef!!.addValueEventListener(mQuestionEventListener)
                 Log.d("QALOG", "FavoriteListener" + questionId)
             }
 
+            //お気に入り質問情報をすべて取得した後に、リストをクリアする
+            mQuestionArrayList.clear()
             Log.d("QALOG", "FavoriteListener END")
         }
 
         override fun onCancelled(firebaseError: DatabaseError) {}
     }
+
+    //質問の実データを取得する
     private val mQuestionEventListener = object : ValueEventListener {
         override fun onDataChange(snapshot: DataSnapshot) {
             Log.d("QALOG", "QuestionListener START")
@@ -78,6 +83,7 @@ class FavoriteQuestionActivity : AppCompatActivity() {
                     bytes,
                     answerArrayList
                 )
+
             mQuestionArrayList.add(question)
             mAdapter.notifyDataSetChanged()
             Log.d("QALOG", "QuestionListener" + snapshot.key)
@@ -94,15 +100,13 @@ class FavoriteQuestionActivity : AppCompatActivity() {
         mGenre = intent.getIntExtra("genre", -1)
 
         mAdapter = QuestionsListAdapter(this)
-        mQuestionArrayList = ArrayList()
+        mQuestionArrayList.clear()
         mAdapter.setQuestionArrayList(mQuestionArrayList)
         favoriteListView.adapter = mAdapter
         mAdapter.notifyDataSetChanged()
 
         val user = FirebaseAuth.getInstance().currentUser
         if (user != null) {
-//            val favoriteRef =
-//                FirebaseDatabase.getInstance().reference.child(FavoritesPATH).child(user.uid)
             favoriteRef = FirebaseDatabase.getInstance().reference.child(FavoritesPATH).child(user.uid)
             favoriteRef!!.addValueEventListener(mFavoriteEventListener)
         }
