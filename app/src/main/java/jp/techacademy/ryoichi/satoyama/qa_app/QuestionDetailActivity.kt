@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import com.google.android.material.snackbar.Snackbar
@@ -59,27 +60,13 @@ class QuestionDetailActivity : AppCompatActivity() {
         }
     }
 
-    private val mFavoriteEventListener = object : ChildEventListener {
+    private val mFavoriteEventListener = object : ValueEventListener {
         override fun onCancelled(error: DatabaseError) {
         }
 
-        override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
-        }
-
-        override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
-        }
-
-        override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
-            val map = snapshot.value as Map<String, String>
-
-            questionId = map["questionId"] ?: ""
-            if(questionId == mQuestion.questionId) {
-                favoriteId = snapshot.key
-            }
-        }
-
-        override fun onChildRemoved(snapshot: DataSnapshot) {
-            //removeValue()が実行され、データが削除された時
+        override fun onDataChange(snapshot: DataSnapshot) {
+            isFavorite = snapshot.value != null
+            invalidateOptionsMenu()
         }
     }
 
@@ -124,8 +111,8 @@ class QuestionDetailActivity : AppCompatActivity() {
         //お気に入り取得
         val user = FirebaseAuth.getInstance().currentUser
         if(user != null) {
-            mFavoriteRef = databaseReference.child(FavoritesPATH).child(user.uid)
-            mFavoriteRef.addChildEventListener(mFavoriteEventListener)
+            mFavoriteRef = databaseReference.child(FavoritesPATH).child(user.uid).child(mQuestion.questionId)
+            mFavoriteRef.addValueEventListener(mFavoriteEventListener)
         }
 
     }
@@ -134,8 +121,18 @@ class QuestionDetailActivity : AppCompatActivity() {
         val user = FirebaseAuth.getInstance().currentUser
         if(user != null) {
             menuInflater.inflate(R.menu.menu_question_detail, menu)
+//            if(isFavorite) {
+//                menu?.findItem(R.id.favoriteButton)?.setIcon(R.drawable.ic_star)
+//            }
         }
         return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
+        menu?.findItem(R.id.favoriteButton)?.let {
+            it.setIcon(if (isFavorite) R.drawable.ic_star else R.drawable.ic_star_border)
+        }
+        return super.onPrepareOptionsMenu(menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -145,29 +142,10 @@ class QuestionDetailActivity : AppCompatActivity() {
             val user = FirebaseAuth.getInstance().currentUser
             if(user != null) {
                 val dataReference = FirebaseDatabase.getInstance().reference
-
-                //trueの場合、お気に入りの削除
-                //falseの場合、お気に入りの登録
                 if(isFavorite) {
-                    //お気に入りボタンのアイコンをボーダーに変更
-                    item.setIcon(R.drawable.ic_star_border)
-
-                    //お気に入りフラグを下げる
-                    isFavorite = false
-
-                    //お気に入り削除処理
-                    if(favoriteId != null) {
-                        dataReference.child(FavoritesPATH).child(user.uid).child(favoriteId!!).removeValue()
-                    } else {
-                        Snackbar.make(findViewById(android.R.id.content), getString(R.string.favorite_remove_error_messege), Snackbar.LENGTH_LONG).show()
-                    }
+                    //お気に入り削除
+                    dataReference.child(FavoritesPATH).child(user.uid).child(mQuestion.questionId).removeValue()
                 } else {
-                    //お気に入りボタンのアイコンを塗りつぶしに変更
-                    item.setIcon(R.drawable.ic_star)
-
-                    //お気に入りフラグを立てる
-                    isFavorite = true
-
                     //登録するデータの作成
                     val data = HashMap<String, String>()
                     data["genre"] = mQuestion.genre.toString()
