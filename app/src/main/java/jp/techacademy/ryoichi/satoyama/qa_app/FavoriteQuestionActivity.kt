@@ -12,7 +12,6 @@ import kotlinx.android.synthetic.main.content_main.*
 
 class FavoriteQuestionActivity : AppCompatActivity() {
     private lateinit var mAdapter: QuestionsListAdapter
-//    private lateinit var mQuestionArrayList: ArrayList<Question>
     private var mQuestionArrayList = ArrayList<Question>()
     private var mGenre = -1
     private var questionRef: DatabaseReference? = null
