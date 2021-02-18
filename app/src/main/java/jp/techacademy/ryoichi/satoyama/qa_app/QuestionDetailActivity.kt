@@ -107,29 +107,24 @@ class QuestionDetailActivity : AppCompatActivity() {
             AnswersPATH)
         mAnswerRef.addChildEventListener(mEventListener)
 
-
-        //お気に入り取得
-        val user = FirebaseAuth.getInstance().currentUser
-        if(user != null) {
-            mFavoriteRef = databaseReference.child(FavoritesPATH).child(user.uid).child(mQuestion.questionId)
-            mFavoriteRef.addValueEventListener(mFavoriteEventListener)
-        }
-
     }
 
     override fun onResume() {
         super.onResume()
-        val extras = intent.extras
-        mQuestion = extras!!.get("question") as Question
+        //todo ログイン後にお気に入りボタンを表示する
+        val user = FirebaseAuth.getInstance().currentUser
+        if(user != null) {
+            //お気に入り取得
+            val databaseReference = FirebaseDatabase.getInstance().reference
+            mFavoriteRef = databaseReference.child(FavoritesPATH).child(user.uid).child(mQuestion.questionId)
+            mFavoriteRef.addValueEventListener(mFavoriteEventListener)
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         val user = FirebaseAuth.getInstance().currentUser
         if(user != null) {
             menuInflater.inflate(R.menu.menu_question_detail, menu)
-//            if(isFavorite) {
-//                menu?.findItem(R.id.favoriteButton)?.setIcon(R.drawable.ic_star)
-//            }
         }
         return super.onCreateOptionsMenu(menu)
     }
