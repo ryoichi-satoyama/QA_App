@@ -117,6 +117,12 @@ class QuestionDetailActivity : AppCompatActivity() {
 
     }
 
+    override fun onResume() {
+        super.onResume()
+        val extras = intent.extras
+        mQuestion = extras!!.get("question") as Question
+    }
+
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         val user = FirebaseAuth.getInstance().currentUser
         if(user != null) {

@@ -18,29 +18,65 @@ class FavoriteQuestionActivity : AppCompatActivity() {
     private var favoriteRef: DatabaseReference? = null
 
     //ユーザごとのお気に入り質問情報を取得する
-    private val mFavoriteEventListener = object : ValueEventListener {
-        override fun onDataChange(snapshot: DataSnapshot) {
-            //onDataChangeはリファレンス配下のデータを丸ごと取得する
-            Log.d("QALOG", "FavoriteListener START")
+//    private val mFavoriteEventListener = object : ValueEventListener {
+//        override fun onDataChange(snapshot: DataSnapshot) {
+//            //onDataChangeはリファレンス配下のデータを丸ごと取得する
+//            Log.d("QALOG", "FavoriteListener START")
+//
+//            //取得したデータ群をイテレートする
+//            for (ss in snapshot.children) {
+//                //お気に入り登録されている質問のIDとジャンルを取得する
+//                val questionId = ss.key.toString()
+//                val genre = ss.child("genre").value.toString()
+//
+//                //お気に入り登録されている質問を取得する
+//                questionRef = FirebaseDatabase.getInstance().reference.child(ContentsPATH).child(genre).child(questionId)
+//                questionRef!!.addValueEventListener(mQuestionEventListener)
+//                Log.d("QALOG", "FavoriteListener" + questionId)
+//            }
+//
+//            //お気に入り質問情報をすべて取得した後に、リストをクリアする
+//            mQuestionArrayList.clear()
+//            Log.d("QALOG", "FavoriteListener END")
+//        }
+//
+//        override fun onCancelled(firebaseError: DatabaseError) {}
+//    }
 
+    private val mFavoriteEventListener = object : ChildEventListener {
+        override fun onCancelled(error: DatabaseError) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
             //取得したデータ群をイテレートする
-            for (ss in snapshot.children) {
-                //お気に入り登録されている質問のIDとジャンルを取得する
-                val questionId = ss.key.toString()
-                val genre = ss.child("genre").value.toString()
+            //お気に入り登録されている質問のIDとジャンルを取得する
+            val map = snapshot.value as Map<String, String>
+            val questionId = snapshot.key ?: ""
+//            val genre = map["genre"] ?: ""
+            mGenre = map["genre"]?.toInt() ?: -1
 
-                //お気に入り登録されている質問を取得する
-                questionRef = FirebaseDatabase.getInstance().reference.child(ContentsPATH).child(genre).child(questionId)
-                questionRef!!.addValueEventListener(mQuestionEventListener)
-                Log.d("QALOG", "FavoriteListener" + questionId)
-            }
+            //お気に入り登録されている質問を取得する
+            questionRef = FirebaseDatabase.getInstance().reference.child(ContentsPATH).child(mGenre.toString()).child(questionId)
+            questionRef!!.addListenerForSingleValueEvent(mQuestionEventListener)
+            Log.d("QALOG", "FavoriteListener" + questionId)
 
             //お気に入り質問情報をすべて取得した後に、リストをクリアする
             mQuestionArrayList.clear()
             Log.d("QALOG", "FavoriteListener END")
         }
 
-        override fun onCancelled(firebaseError: DatabaseError) {}
+        override fun onChildRemoved(snapshot: DataSnapshot) {
+            Log.d("QALOG", "Favorite deleted")
+        }
     }
 
     //質問の実データを取得する
@@ -71,17 +107,7 @@ class FavoriteQuestionActivity : AppCompatActivity() {
                     answerArrayList.add(answer)
                 }
             }
-            val question =
-                Question(
-                    title,
-                    body,
-                    name,
-                    uid,
-                    snapshot.key ?: "",
-                    mGenre,
-                    bytes,
-                    answerArrayList
-                )
+            val question = Question(title, body, name, uid, snapshot.key ?: "", mGenre, bytes, answerArrayList)
 
             mQuestionArrayList.add(question)
             mAdapter.notifyDataSetChanged()
@@ -92,11 +118,13 @@ class FavoriteQuestionActivity : AppCompatActivity() {
         override fun onCancelled(firebaseError: DatabaseError) {}
     }
 
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_favorite_question)
 
-        mGenre = intent.getIntExtra("genre", -1)
+//        mGenre = intent.getStringExtra("genre")
 
         mAdapter = QuestionsListAdapter(this)
         mQuestionArrayList.clear()
@@ -106,8 +134,10 @@ class FavoriteQuestionActivity : AppCompatActivity() {
 
         val user = FirebaseAuth.getInstance().currentUser
         if (user != null) {
-            favoriteRef = FirebaseDatabase.getInstance().reference.child(FavoritesPATH).child(user.uid)
-            favoriteRef!!.addValueEventListener(mFavoriteEventListener)
+            favoriteRef =
+                FirebaseDatabase.getInstance().reference.child(FavoritesPATH).child(user.uid)
+//            favoriteRef!!.addValueEventListener(mFavoriteEventListener)
+            favoriteRef!!.addChildEventListener(mFavoriteEventListener)
         }
 
         favoriteListView.setOnItemClickListener { parent, view, position, id ->
